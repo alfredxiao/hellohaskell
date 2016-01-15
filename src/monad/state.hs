@@ -1,42 +1,57 @@
 type Name = String
 type Greeting = String
 type LogBook = [String]
-data Tree a = EmptyTree | Node a (Tree a) (Tree a) deriving (Show, Eq)
 
-newStudents = Node "Alessandra"
-                (Node "Anderson"
-                  (Node "Brett" EmptyTree EmptyTree)
-                  (Node "Carlson" EmptyTree EmptyTree))
-                (Node "Isabella" EmptyTree EmptyTree)
+-- Tree of any type (the `a` in `Tree a` can be any type. Technially should be instance of Show but here ignored for simplicity)
+data Tree a = Empty | Node a (Tree a) (Tree a) deriving Show
+
+{- Students are organised as a tree-like structure
+          Anderson
+          /      \
+       Bryan    Emily
+      /     \
+   Carlson  Derrick
+-}
+
+-- represented a tree value (with nested trees)
+studentTree = Node "Anderson"
+                (Node "Bryan"
+                  (Node "Carlson" Empty Empty)
+                  (Node "Derrick" Empty Empty))
+                (Node "Isabella" Empty Empty)
+
+{- studentTree is turned into a tree of greetings
+greetingTree =  Node "Welcome, Alessandra"
+                  (Node "Welcome, Anderson"
+                    (Node "Welcome, Brett" Empty Empty)
+                    (Node "Welcome, Carlson" Empty Empty))
+                  (Node "Welcome, Isabella" Empty Empty)
+
+-- after greeting, we produce a logBook as well
+greetingLogBook =  ["Anderson has arrived",
+                    "Bryan has arrived",
+                    "Carlson has arrived",
+                    "Derrick has arrived",
+                    "Emily has arrived"]
+-}
 
 
-expectedGreetedStudents = Node "Welcome, Alessandra"
-                    (Node "Welcome, Anderson"
-                      (Node "Welcome, Brett" EmptyTree EmptyTree)
-                      (Node "Welcome, Carlson" EmptyTree EmptyTree))
-                    (Node "Welcome, Isabella" EmptyTree EmptyTree)
+greet :: Name -> LogBook -> (LogBook, Greeting)
+greet name logBook = (logBook ++ [newLog], greeting)
+                     where
+                       newLog = name ++ " has arrived"
+                       greeting = "Welcome, " ++ name
 
-expectedFinalLogBook = ["Alessandra has arrived",
-                        "Anderson has arrived",
-                        "Brett has arrived",
-                        "Carlson has arrived",
-                        "Isabella has arrived"]
-
-year2Student :: Name -> LogBook -> (LogBook, Greeting)
-year2Student name logBook = (logBook ++ [newLog], greeting)
-                             where
-                               newLog = name ++ " has arrived"
-                               greeting = "Welcome, " ++ name
-
-greetNewStudents :: (Name -> LogBook -> (LogBook, Greeting)) -> (Tree Name) -> LogBook -> (LogBook, (Tree Greeting))
-greetNewStudents f EmptyTree logBook = (logBook, EmptyTree)
-greetNewStudents f (Node name left right) logBook =
+greetStudents :: (Name -> LogBook -> (LogBook, Greeting)) -> (Tree Name) -> LogBook -> (LogBook, (Tree Greeting))
+greetStudents f Empty logBook = (logBook, Empty)
+greetStudents f (Node name left right) logBook =
       let (logBook'  , greeting) = f name logBook
-          (logBook'' , greetedLeft) = greetNewStudents f left logBook'
-          (logBook''', greetedRight) = greetNewStudents f right logBook''
+          (logBook'' , greetedLeft) = greetStudents f left logBook'
+          (logBook''', greetedRight) = greetStudents f right logBook''
       in  (logBook''', Node greeting greetedLeft greetedRight)
 
-(actualFinalLogBook, actualGreetedStudents) = greetNewStudents year2Student newStudents []
+-- with `greetStudents`, we can greet a tree of students, yielding a LogBook, and a new tree of greetings
+-- (actualFinalLogBook, actualGreetedStudents) = greetStudents greet studentTree []
 
 type Greeter sth = LogBook -> (LogBook, sth)
 
@@ -51,12 +66,16 @@ greeter `liftUp` knowledge = \logBook ->
       greeter' = knowledge greeting
   in greeter' logBook'
 
-greetNewStudentsV2 :: (Name -> LogBook -> (LogBook, Greeting)) -> (Tree Name) -> Greeter (Tree Greeting)
-greetNewStudentsV2 f (Node name EmptyTree EmptyTree) =
-  f name `liftUp` \greeting -> (\logBook ->  (logBook, (Node greeting EmptyTree EmptyTree)))
+-- alternate names for liftUp: promote, empower, augment, etc.
 
-greetNewStudentsV2 f (Node name lhs rhs) =
+makeTreeGreeter :: (Name -> LogBook -> (LogBook, Greeting)) -> (Tree Name) -> Greeter (Tree Greeting)
+makeTreeGreeter f (Node name Empty Empty) =
+  f name `liftUp` \greeting -> makeGreeter (Node greeting Empty Empty)
+
+makeTreeGreeter f (Node name lhs rhs) =
   f name `liftUp`
-    \greeting -> greetNewStudentsV2 f lhs `liftUp`
-      \lhs' -> greetNewStudentsV2 f rhs `liftUp`
-        \rhs' -> \logBook -> (logBook, (Node greeting lhs' rhs'))
+    \greeting -> makeTreeGreeter f lhs `liftUp`
+      \leftGreeted -> makeTreeGreeter f rhs `liftUp`
+        \rightGreeted -> makeGreeter (Node greeting leftGreeted rightGreeted)
+
+-- makeTreeGreeter greet studentTree []

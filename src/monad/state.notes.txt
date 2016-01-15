@@ -1,0 +1,26 @@
+Example: Greeting new students
+Your sister, Jessica, is in Melbourne University studying Computer Science. She was asked to help welcoming new students who is fresh to join the university at their arrival. The organiser of the ceremony wants all greetings are logged down into a log book with the new students' names. Jessica will be adivised the name of the student she is going to greet.
+
+As such, Jessica has been instructed to welcome someone by doing two things:
+1. Say 'Welcome [a name here]' to the student;
+2. Write a log record in log book as '[a name here] has arrived'.
+
+From Jessica's perspective, what she needs to do:
+1. Tell me the name of the student, I will know how to greet him/her.
+2. Give me the log book, I will append a new line with the new student's name.
+
+This is like a function where it works by:
+Given a name a logBook, returns greeting message and updated logBook:
+GreetResult greetAndLog(name, logBook) {
+    {greeting: "Welcome, " + name
+     logBook:  logBook + "\n" + name + " has arrived")
+}
+
+Before new students arrive, Jessica was told she would greet Isabella. This means that Jessica has the learned the knowlege about name she cares about in order to do her job, but she still needs to logBook to fulfill her duties.
+
+Let's say the organiser loves data structure (because she teaches Data Structure). She has arranged new student names as a tree like structure as:
+          Alessandra
+          /        \
+    Anderson      Isabella
+   /      \
+Brett   Carlson
